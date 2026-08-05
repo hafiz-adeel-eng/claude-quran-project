@@ -107,7 +107,43 @@ Skip link · one `<h1>` with an ordered heading tree · landmark elements · vis
 handling in the mobile drawer · `prefers-reduced-motion` and `forced-colors` support ·
 wide tables scroll in their own container, never the page.
 
-## 5 · Conversion features
+## 5 · CI
+
+`.github/workflows/ci.yml` runs on every pull request and push to `main`, in two parallel jobs:
+
+| Job | Checks | Command |
+|---|---|---|
+| `validate` | Markup validity | `npx html-validate index.html` |
+| `validate` | Page invariants — see below | `node scripts/validate-page.mjs` |
+| `lighthouse` | Performance ≥ 90, Accessibility ≥ 95, Best Practices ≥ 90, SEO ≥ 95 (desktop) | `lighthouse` + `node scripts/check-lighthouse.mjs` |
+
+`scripts/validate-page.mjs` is a dependency-free Node script asserting the things specific to
+this page that quietly break when the HTML is hand-edited: the JSON-LD parses and declares
+every entity type the page relies on, **all 12 FAQ answers match exactly between the schema
+and the visible `<details>` markup**, there is exactly one `<h1>`, every in-page anchor
+resolves, every icon `<use>` points at a defined `<symbol>`, every local asset reference
+exists on disk, every form control has a matching `<label for>`, and the meta description
+stays within Google's ~70–165 character display range.
+
+Thresholds in `scripts/check-lighthouse.mjs` are set a few points under what this page
+actually scores locally (100 / 100 / 96 / 100 outside a network-restricted sandbox), leaving
+headroom for normal runner variance while still catching a real regression. `.htmlvalidate.json`
+turns off `no-redundant-role` only, because the stylesheet's `list-style: none` strips list
+semantics in Safari/VoiceOver — `role="list"` restores them deliberately.
+
+Run everything locally before pushing:
+
+```bash
+npx html-validate index.html
+node scripts/validate-page.mjs
+npx http-server -p 8080 -s &
+npx lighthouse http://127.0.0.1:8080/index.html --preset=desktop \
+  --output=json --output-path=./lighthouse-report.json \
+  --chrome-flags="--headless=new"
+node scripts/check-lighthouse.mjs ./lighthouse-report.json
+```
+
+## 6 · Conversion features
 
 Sticky header with a permanent CTA · announcement bar with urgency · **hero lead form
 above the fold** · second full form in the closing CTA band · floating WhatsApp button
@@ -115,7 +151,7 @@ above the fold** · second full form in the closing CTA band · floating WhatsAp
 featured middle pricing tier for anchoring · risk reversal repeated at every CTA
 ("no card, no registration fee, cancel anytime").
 
-## 6 · Wiring up the forms
+## 7 · Wiring up the forms
 
 Both forms are handled by `leadForms()` in `script.js`. Replace the placeholder
 `sendLead()` transport with your real endpoint:
@@ -136,7 +172,7 @@ included and stripped from the payload. A `free_trial_lead` event is pushed to
 Prefer a plugin? Swap either `<form>` for a Contact Form 7 or WPForms shortcode —
 nothing else depends on it.
 
-## 7 · WordPress notes
+## 8 · WordPress notes
 
 - Every section is self-contained and maps cleanly to a block pattern or ACF flexible layout.
 - All colour, spacing, radius and shadow values come from CSS custom properties in `:root`
@@ -157,7 +193,7 @@ nothing else depends on it.
 /courses/arabic-reading/             /terms-and-conditions/
 ```
 
-## 8 · Local preview
+## 9 · Local preview
 
 ```bash
 python3 -m http.server 8000

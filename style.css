@@ -55,7 +55,7 @@
   --gray-200:  #e5eaec;
   --gray-300:  #cfd8dc;
   --gray-400:  #9aa8ae;
-  --gray-500:  #6b7b83;
+  --gray-500:  #5f6f77;   /* 4.75:1 on the darkest surface — WCAG AA body text */
   --gray-600:  #4d5c64;
   --gray-700:  #35434a;
   --gray-800:  #1f2b31;
@@ -74,7 +74,10 @@
   --heading:          var(--gray-900);
   --border:           var(--gray-200);
   --focus:            var(--teal-600);
-  --whatsapp:         #25d366;
+  /* Darkened from the #25d366 brand green: white text on the bright
+     value is only 1.98:1. This is 4.97:1 and still reads as WhatsApp.
+     The bright green survives in the decorative pulse glow below. */
+  --whatsapp:         #0b8140;
 
   /* ---- Typography ----------------------------------------------------- */
   --font-heading: "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -187,12 +190,36 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 p { margin: 0 0 var(--sp-4); }
 p:last-child { margin-bottom: 0; }
 
+/* Links are underlined by default: colour alone is not a sufficient
+   distinction inside a block of text (WCAG 1.4.1). Interface furniture —
+   nav, buttons, cards, footer columns — opts out below, where position and
+   styling already make them unmistakably interactive.
+   teal-700 rather than teal-600: 4.99:1 on the darkest surface vs 3.41:1. */
 a {
-  color: var(--brand-dark);
-  text-decoration: none;
+  color: var(--brand-darker);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  text-decoration-thickness: from-font;
   transition: color var(--t-fast) var(--ease);
 }
-a:hover { color: var(--brand-darker); text-decoration: underline; }
+a:hover { color: var(--teal-800); }
+
+.skip-link,
+.logo,
+.btn,
+.link-arrow,
+.nav__list a,
+.dropdown a,
+.nav__toggle,
+.nav__call,
+.topbar__link,
+.footer__col a,
+.footer__contact a,
+.cta-band__contacts a,
+.mobile-bar__btn,
+.fab,
+.card--course h3 a,
+.card--post h3 a { text-decoration: none; }
 
 button { font: inherit; color: inherit; }
 
@@ -1485,6 +1512,9 @@ body.is-locked { overflow: hidden; }
   border: 1px solid var(--border);
 }
 .fab--top[hidden] { display: none; }
+/* Reuse the arrow glyph pointing up (kept out of the HTML so the markup
+   carries no inline styles and stays clean under a strict CSP). */
+.fab--top .icon { transform: rotate(-90deg); }
 
 /* Mobile sticky action bar */
 .mobile-bar {
