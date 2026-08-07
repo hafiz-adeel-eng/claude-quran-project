@@ -38,8 +38,9 @@ Single `<h1>` confirmed; all section headings use semantic `<h2>`/`<h3>` in docu
 ## JSON-LD structured data implemented
 - `EducationalOrganization` — name, url, description, `areaServed` (the 8 target countries).
 - `FAQPage` — mirrors the 5 visible FAQ accordion items verbatim, so answers stay consistent for AI Overviews / AEO.
+- `ItemList` of 6 `Course` entries (one per featured course card) — each with a `CourseInstance` (online, 30-minute sessions, weekly ×16) and an `Offer` at the confirmed flat rate ($40 USD/month), now that real pricing/duration data exists.
 
-**Not yet implemented (needs real data before launch):** `AggregateRating`, `Course` schema per course card (requires real pricing/duration), `LocalBusiness`/`Organization.telephone` (phone number is a placeholder — adding a fabricated number to schema would be a structured-data integrity risk).
+**Not yet implemented (needs real data before launch):** `AggregateRating` (no verified rating yet), `LocalBusiness`/`Organization.telephone` (phone number is a placeholder — adding a fabricated number to schema would be a structured-data integrity risk).
 
 ## AEO / GEO readiness
 - FAQ section gives concise, directly quotable answers (1–2 sentences each) so AI answer engines can cite them without paraphrasing risk.
@@ -55,8 +56,8 @@ Every instance below is marked `class="needs-input"` in `index.html` so it's vis
 - Stats bar: rating value, student count, certified-tutor percentage (country count of "8" is safe — it's the client's own stated target-market list).
 - Trust banner: founding year / years of operation.
 - Mission checklist: years of dedicated Quranic education.
-- Course cards: session duration, enrollment counts, ratings (×6 cards).
-- Pricing table: all prices, class-per-week counts, yearly-savings percentage (×4 tiers × 2 billing periods).
+- Course cards: enrollment counts, ratings (×6 cards) — duration (30 min/session) and price ($40/month, 16 classes) are now confirmed and filled in.
+- Pricing: confirmed flat rate — $40/month, 16 classes/month, 30 minutes/class, same price across every course.
 - Blog cards: publish dates (×3).
 - Top bar / footer: phone number, WhatsApp number.
 - Footer credit line: agency/developer name.

@@ -59,31 +59,6 @@
     });
   });
 
-  /* Pricing: monthly / yearly toggle */
-  var billingToggle = document.querySelectorAll("[data-billing-toggle]");
-  billingToggle.forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      billingToggle.forEach(function (b) {
-        b.setAttribute("aria-pressed", "false");
-      });
-      btn.setAttribute("aria-pressed", "true");
-      document.querySelectorAll("[data-billing-period]").forEach(function (el) {
-        el.style.display = el.getAttribute("data-billing-period") === btn.getAttribute("data-billing-toggle") ? "" : "none";
-      });
-    });
-  });
-
-  /* Pricing: currency toggle (label swap only — values are placeholders) */
-  var currencyToggle = document.querySelectorAll("[data-currency-toggle]");
-  currencyToggle.forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      currencyToggle.forEach(function (b) {
-        b.setAttribute("aria-pressed", "false");
-      });
-      btn.setAttribute("aria-pressed", "true");
-    });
-  });
-
   /* Newsletter form (front-end only — needs real endpoint before launch) */
   var newsletterForm = document.querySelector("[data-newsletter-form]");
   if (newsletterForm) {

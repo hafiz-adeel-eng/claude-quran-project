@@ -852,67 +852,6 @@ p {
 }
 
 /* ---------- Pricing ---------- */
-.pricing-toolbar {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 10px;
-}
-
-.toggle-group {
-  display: inline-flex;
-  background: var(--color-bg-soft);
-  border-radius: var(--radius-pill);
-  padding: 4px;
-}
-
-.toggle-btn {
-  border: none;
-  background: transparent;
-  padding: 10px 20px;
-  border-radius: var(--radius-pill);
-  font-weight: 600;
-  color: var(--color-text-muted);
-}
-
-.toggle-btn[aria-pressed="true"] {
-  background: var(--color-primary);
-  color: #fff;
-}
-
-.save-badge {
-  font-size: 0.7rem;
-  background: var(--color-accent);
-  color: #1f2937;
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
-  margin-left: 6px;
-}
-
-.currency-group {
-  display: inline-flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.currency-btn {
-  border: 1px solid var(--color-border);
-  background: #fff;
-  padding: 8px 14px;
-  border-radius: var(--radius-pill);
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
-}
-
-.currency-btn[aria-pressed="true"] {
-  border-color: var(--color-primary);
-  color: var(--color-primary-700);
-  background: var(--color-bg-soft);
-}
-
 .pricing-note {
   text-align: center;
   font-size: 0.85rem;
@@ -930,6 +869,12 @@ p {
   display: grid;
   grid-template-columns: 1fr;
   gap: 22px;
+}
+
+.pricing-grid--single {
+  grid-template-columns: 1fr !important;
+  max-width: 380px;
+  margin-inline: auto;
 }
 
 .pricing-card {
@@ -990,6 +935,10 @@ p {
 
 .pricing-card--featured .price-frequency {
   color: var(--color-accent);
+}
+
+.pricing-card--featured h3 {
+  color: #fff;
 }
 
 .pricing-features {
