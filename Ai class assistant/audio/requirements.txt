@@ -1,0 +1,12 @@
+# Audio + speech sidecar on Windows. SETUP.bat installs this into .venv.
+#
+# PyAudioWPatch is what captures the speaker (WASAPI loopback), and scipy is
+# the resampler's filter. Both were imported but missing from this list, so a
+# fresh install failed at the first import; they had only ever been installed
+# by hand on the machine this was written on.
+PyAudioWPatch>=0.2.12
+numpy>=1.24
+scipy>=1.10
+faster-whisper>=1.1.0
+websockets>=12.0
+webrtcvad-wheels>=2.0.14

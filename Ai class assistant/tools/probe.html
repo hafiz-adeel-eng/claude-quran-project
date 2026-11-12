@@ -1,0 +1,28 @@
+<!doctype html><meta charset="utf-8">
+<body style="margin:0;background:#111;color:#eee;font:12px sans-serif;padding:8px">
+<div id="s">requesting screen…</div>
+<script>
+const { ipcRenderer } = require('electron');
+const s = document.getElementById('s');
+(async () => {
+  try {
+    const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+    s.textContent = 'got stream';
+    const v = document.createElement('video');
+    v.srcObject = stream; v.muted = true; v.playsInline = true;
+    await v.play();
+    await new Promise(r => setTimeout(r, 1500));
+    const c = document.createElement('canvas');
+    c.width = v.videoWidth; c.height = v.videoHeight;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(v, 0, 0);
+    const d = ctx.getImageData(0, 0, c.width, c.height);
+    stream.getTracks().forEach(t => t.stop());
+    s.textContent = 'captured ' + c.width + 'x' + c.height;
+    ipcRenderer.send('frame', { w: c.width, h: c.height, buf: Array.from(d.data) });
+  } catch (e) {
+    s.textContent = 'ERR ' + e;
+    ipcRenderer.send('frame', { error: String((e && e.message) || e) });
+  }
+})();
+</script></body>

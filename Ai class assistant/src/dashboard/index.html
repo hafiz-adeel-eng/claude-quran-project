@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self';" />
+<title>Meeting Copilot - Dashboard</title>
+<link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+
+<aside id="side">
+  <div id="brand">Meeting&nbsp;Copilot</div>
+  <button id="newMeeting" class="primary">+ New meeting</button>
+  <div id="list"></div>
+  <div id="sideFoot">
+    <button id="doctorBtn" class="ghost">Run check-up</button>
+    <button id="resetOverlayBtn" class="ghost">Bring panel back</button>
+    <button id="folderBtn" class="ghost">Open data folder</button>
+    <div class="credit">Made by Tanzeel &middot;
+      <a href="https://github.com/tanzeeldevAi" target="_blank" rel="noopener">github.com/tanzeeldevAi</a></div>
+  </div>
+</aside>
+
+<main id="main">
+
+  <header id="top">
+    <input id="title" placeholder="Meeting title" />
+    <div class="spacer"></div>
+    <span id="liveState" class="pill idle">idle</span>
+    <button id="startBtn" class="primary">Start listening</button>
+    <button id="stopBtn" class="danger hidden">Stop</button>
+  </header>
+
+  <nav id="tabs">
+    <button data-tab="brief" class="on">Brief</button>
+    <button data-tab="live">Live</button>
+    <button data-tab="notes">Notes &amp; summary</button>
+    <button data-tab="settings">Settings</button>
+  </nav>
+
+  <div id="err" class="hidden"></div>
+
+  <!-- ---------------- BRIEF ---------------- -->
+  <section id="tab-brief" class="tab on">
+    <p class="hint">
+      Everything here does two jobs: it tells Claude what the meeting is about, and the
+      names and jargon get fed into the speech recogniser so it stops mishearing them.
+    </p>
+
+    <div class="grid">
+      <label>Meeting type
+        <select id="kind">
+          <option>client call</option>
+          <option>interview</option>
+          <option>sales call</option>
+          <option>standup</option>
+          <option>negotiation</option>
+          <option>other</option>
+        </select>
+      </label>
+      <label>Company / client<input id="company" placeholder="e.g. Brightside Bakery" /></label>
+      <label>My role / position<input id="role" placeholder="e.g. senior backend developer" /></label>
+      <label>Who I am talking to<input id="otherSide" placeholder="e.g. their CTO and a recruiter" /></label>
+    </div>
+
+    <label class="full">What a good outcome looks like
+      <textarea id="goal" rows="2" placeholder="e.g. get them to agree to a paid pilot"></textarea>
+    </label>
+
+    <label class="full">My prepared material <small>(this is the most important box on the page)</small>
+      <textarea id="background" rows="9" placeholder="Paste your prepared lines, your script, your CV, the proposal, pricing, past results&#10;&#10;Claude uses this as the FIRST place to look for what to say, and adapts your wording to whatever they actually ask.&#10;&#10;Private reminders to yourself are fine - mark them DON'T SAY or NOTE and they will never be read out loud."></textarea>
+    </label>
+    <p class="hint" style="margin-top:-6px">
+      This works like a script. <b>If you wrote a line for it, it says your line</b> &mdash; close to
+      word for word, only adjusted to fit the moment. <b>If they ask something you did not prepare
+      for</b>, it still answers, but only using the facts, prices and claims that appear here, in your
+      voice. It will not invent a service or a promise you never wrote.<br />
+      Anything marked <b>DON'T SAY</b> or <b>NOTE</b> stays private &mdash; it reads those to decide
+      what to say, and never says them out loud.
+    </p>
+
+    <label class="full">Names &amp; jargon likely to come up <small>(comma separated - these are fed to the speech recogniser)</small>
+      <textarea id="terms" rows="2" placeholder="idempotency, Kubernetes, Rank Math, Hostinger, Zainab"></textarea>
+    </label>
+
+    <div class="row">
+      <button id="saveBrief" class="primary">Save brief</button>
+      <button id="clarifyBtn" class="ghost">Ask Claude what else it needs</button>
+      <span id="savedMsg" class="ok hidden">saved</span>
+    </div>
+
+    <div id="prep" class="hidden">
+      <h3>Claude wants to know</h3>
+      <p class="hint">Answering these is the single biggest thing you can do for answer quality.
+        Your answers get appended to the background above.</p>
+      <div id="prepList"></div>
+      <div class="row"><button id="prepSave" class="primary">Add answers to brief</button></div>
+    </div>
+  </section>
+
+  <!-- ---------------- LIVE ---------------- -->
+  <section id="tab-live" class="tab">
+    <div id="devices" class="devices">not listening</div>
+    <div id="liveFeed"></div>
+  </section>
+
+  <!-- ---------------- NOTES ---------------- -->
+  <section id="tab-notes" class="tab">
+    <div class="row">
+      <button id="summariseBtn" class="primary">Generate summary</button>
+      <button id="docxBtn" class="ghost">Download Word (.docx)</button>
+    </div>
+    <div id="summary" class="hint">No summary yet. Generate one after the meeting.</div>
+    <h3>Notes</h3>
+    <div class="row">
+      <input id="noteInput" placeholder="Type a note and press Enter…" style="flex:1" />
+      <button id="noteAdd" class="ghost">Add</button>
+    </div>
+    <div id="notes" class="hint">No notes.</div>
+  </section>
+
+  <!-- ---------------- SETTINGS ---------------- -->
+  <section id="tab-settings" class="tab">
+
+    <h3 style="margin-top:0">Audio devices</h3>
+    <p class="hint">Pick the speaker your meeting plays through and the microphone you talk into.
+      <b>Test speaker</b> also checks that the app can actually hear that speaker &mdash; that is the
+      path the other person's voice travels, so if it fails nothing gets transcribed.</p>
+    <div class="grid">
+      <label>Speaker <small>(where the meeting plays &mdash; this is what gets transcribed)</small>
+        <select id="dOutput"><option value="">Same as system</option></select>
+      </label>
+      <label>Microphone <small>(your own voice)</small>
+        <select id="dInput"><option value="">Same as system</option></select>
+      </label>
+    </div>
+    <div class="row">
+      <button id="dTestSpeaker" class="primary">Test speaker</button>
+      <button id="dTestMic" class="primary">Test mic</button>
+      <button id="dRefresh" class="ghost">Refresh list</button>
+      <label class="check" style="margin:0"><input type="checkbox" id="dPlayback" checked /> play my recording back</label>
+    </div>
+    <div id="dResult" class="hint">Not tested yet.</div>
+
+    <h3>Read answers on your phone</h3>
+    <p class="hint">The only way to stay invisible when you share your <b>entire screen</b>.
+      Some Windows laptops, usually ones with older Intel graphics, cannot hide a window from a
+      full-screen capture, so the panel shows as a dark box. Put the answers on your phone instead and there
+      is nothing on screen to capture at all. Same WiFi, scan the code.</p>
+    <label class="check"><input type="checkbox" id="cEnabled" /> Serve the phone view while a meeting is running</label>
+    <div id="cBox" class="hint">Start listening and the link appears here.</div>
+
+    <h3>Brain &amp; speech</h3>
+    <div class="grid">
+      <label>Live answers <small>(speed matters most)</small>
+        <select id="sModel">
+          <option value="haiku">Haiku (fastest - recommended)</option>
+          <option value="sonnet">Sonnet (smarter, a little slower)</option>
+          <option value="opus">Opus (best, slowest)</option>
+        </select>
+      </label>
+      <label>Prep &amp; summary <small>(nobody waiting)</small>
+        <select id="sDeepModel">
+          <option value="sonnet">Sonnet (recommended)</option>
+          <option value="opus">Opus (best)</option>
+          <option value="haiku">Haiku (fastest)</option>
+        </select>
+      </label>
+      <label>Answer length (max words)<input id="sWords" type="number" min="20" max="150" /></label>
+      <label>Speech backend
+        <select id="sBackend"><option value="local">local (no key, uses CPU)</option><option value="cloud">cloud (low latency, needs key)</option></select>
+      </label>
+      <label>Local model
+        <select id="sWhisper"><option value="tiny.en">tiny.en (fastest - best on older laptops)</option><option value="base.en">base.en (more accurate)</option><option value="small.en">small.en (most accurate, needs a fast CPU)</option></select>
+      </label>
+      <label>CPU threads<input id="sThreads" type="number" min="1" max="4" /></label>
+      <label>Cloud speech API key<input id="sKey" type="password" placeholder="only for the cloud speech backend" /></label>
+      <label>Anthropic API key <small>(only if the Claude CLI cannot sign in - bills per token)</small><input id="sAnthropicKey" type="password" placeholder="leave empty to use your Claude subscription" /></label>
+      <label>Main brain
+        <select id="sProvider"><option value="claude">Claude (your Claude Pro or Max subscription)</option><option value="codex">ChatGPT (your ChatGPT subscription, through the Codex CLI)</option><option value="openai">OpenAI API (API key, pay per use)</option></select>
+      </label>
+      <label>OpenAI model
+        <select id="sOpenaiModel"><option value="gpt-4o-mini">gpt-4o-mini (fastest, cheapest)</option><option value="gpt-4o">gpt-4o (better)</option><option value="gpt-4.1-mini">gpt-4.1-mini</option><option value="gpt-4.1">gpt-4.1</option></select>
+      </label>
+      <label>OpenAI API key <small>(from platform.openai.com - only for "OpenAI API"; ChatGPT needs no key)</small><input id="sOpenaiKey" type="password" placeholder="sk-..." /></label>
+    </div>
+    <label class="check"><input type="checkbox" id="sAuto" /> Answer automatically when they speak</label>
+    <label class="check"><input type="checkbox" id="sSuggest" /> Suggest questions I could ask</label>
+    <label class="check"><input type="checkbox" id="sPartials" /> Show live partial text while they speak <small>(costs CPU - leave off on older laptops)</small></label>
+    <label class="check"><input type="checkbox" id="sMe" /> Also transcribe my own voice (for context and notes)</label>
+    <label class="check"><input type="checkbox" id="sEcho" /> Drop my mic picking up their voice from my speakers</label>
+    <label class="check"><input type="checkbox" id="sFallback" /> If Claude fails mid-meeting, keep answering with a backup <small>(the OpenAI key above, or ChatGPT if the Codex CLI is signed in)</small></label>
+    <label class="check"><input type="checkbox" id="sMock" /> Offline demo mode (canned answers, no Claude)</label>
+
+    <div class="row"><button id="saveSettings" class="primary">Save settings</button><span id="setMsg" class="ok hidden">saved</span></div>
+
+    <h3>Check-up</h3>
+    <div id="doctor" class="hint">Run the check-up to see if everything is wired correctly.</div>
+  </section>
+
+</main>
+
+<script src="dashboard.js"></script>
+</body>
+</html>

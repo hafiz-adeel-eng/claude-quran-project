@@ -1,0 +1,255 @@
+/* Glass overlay.
+   The see-through effect comes from the WINDOW (setOpacity in main.js), not
+   from CSS alpha -- an opaque window is what lets Windows exclude it from
+   screen capture instead of blacking it out. So every colour here is SOLID;
+   rgba backgrounds would just composite against the window colour and buy
+   nothing. Sized so the ANSWER is the largest thing on screen: it is meant to
+   be read aloud at a glance while looking at a camera. */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --glass: #0b0e14;
+  --glass-strong: #070910;
+  --line: #1e2430;
+  --text: #eef2f8;
+  --dim: #9aa4b4;
+  --them: #6fd3ff;
+  --me: #b6f09c;
+  --accent: #ffd479;
+  --bad: #ff8a80;
+}
+
+html, body {
+  height: 100%;
+  background: transparent;
+  color: var(--text);
+  font: 13px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+  user-select: none;
+  cursor: default;
+}
+
+#shell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--glass);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* Grab ANYWHERE to move the window. A frameless window has no title bar, so
+   without this there is nothing to drag.
+   -webkit-app-region does NOT inherit, so each panel must declare it -- setting
+   it only on #shell leaves just the 1px border draggable. */
+#shell, #bar, #feed, #answerWrap, #answerHead, #suggests, #foot, #banner {
+  -webkit-app-region: drag;
+}
+
+/* Anything you click or type into must opt out, or it becomes part of the drag
+   handle and stops responding.
+   The answer text is deliberately NOT in this list: it is the largest area of
+   the window, and being unable to drag from it made the overlay feel stuck.
+   Selecting it by mouse is traded away for the 'copy' button in its header. */
+button, input, textarea, select, .chip {
+  -webkit-app-region: no-drag;
+}
+
+/* ---------------- header ---------------- */
+
+#bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  background: var(--glass-strong);
+  border-bottom: 1px solid var(--line);
+  flex: 0 0 auto;
+}
+
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+.dot.idle { background: #6b7280; }
+.dot.live { background: #37d67a; box-shadow: 0 0 8px #37d67a; }
+.dot.busy { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+.dot.bad  { background: var(--bad); box-shadow: 0 0 8px var(--bad); }
+
+#status { font-size: 11px; color: var(--dim); white-space: nowrap; }
+.spacer { flex: 1; }
+
+#meters { display: flex; gap: 3px; align-items: center; }
+.meter {
+  width: 26px; height: 4px; border-radius: 2px;
+  background: rgba(255, 255, 255, 0.10); overflow: hidden;
+}
+.meter i { display: block; height: 100%; width: 0%; transition: width 90ms linear; }
+#mThem { background: var(--them); }
+#mMe   { background: var(--me); }
+
+.btns { display: flex; gap: 2px; }
+#bar button {
+  background: transparent; color: var(--dim); border: 1px solid transparent;
+  border-radius: 5px; font: inherit; font-size: 11px; padding: 2px 6px; cursor: pointer;
+}
+#bar button:hover { color: var(--text); background: rgba(255, 255, 255, 0.08); }
+#bar button.on { color: #0b0d12; background: var(--accent); border-color: var(--accent); }
+#bar button.icon { font-size: 12px; padding: 2px 5px; }
+
+#opacity {
+  -webkit-appearance: none; appearance: none;
+  width: 52px; height: 3px; border-radius: 2px; background: #2b3242;
+  outline: none; cursor: pointer; margin: 0 2px;
+}
+#opacity::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 9px; height: 9px; border-radius: 50%; background: var(--dim); cursor: pointer;
+}
+#opacity:hover::-webkit-slider-thumb { background: var(--accent); }
+
+/* Click-through mode: dim the panels the mouse now passes through, so it is
+   obvious which parts are still live. */
+body.ghost #feed, body.ghost #answerWrap { opacity: .82; }
+body.ghost #bar { border-bottom-color: var(--accent); }
+
+/* ---------------- banner ---------------- */
+
+#banner {
+  padding: 7px 10px; font-size: 11.5px; line-height: 1.4;
+  background: rgba(255, 138, 128, 0.14);
+  border-bottom: 1px solid rgba(255, 138, 128, 0.3);
+  color: #ffd9d5; flex: 0 0 auto;
+}
+#banner.warn { background: rgba(255, 212, 121, 0.13); border-bottom-color: rgba(255,212,121,.3); color: #ffe9bd; }
+.hidden { display: none !important; }
+
+/* ---------------- transcript feed ----------------
+   Newest at the bottom; older lines rise out of the top. */
+
+#feed {
+  flex: 1 1 34%;
+  min-height: 0;
+  max-height: 42%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 5px;
+}
+#feed::-webkit-scrollbar { width: 8px; }
+#feed::-webkit-scrollbar-thumb { background: rgba(255,255,255,.28); border-radius: 4px; }
+
+.line { font-size: 12px; line-height: 1.4; opacity: 0; animation: rise .22s ease-out forwards; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.line .who { font-size: 9.5px; letter-spacing: .09em; text-transform: uppercase; margin-right: 6px; opacity: .75; }
+.line.them .who { color: var(--them); }
+.line.me   .who { color: var(--me); }
+.line.me   { color: var(--dim); }
+.line.live { opacity: .62; font-style: italic; }
+
+/* ---------------- the answer ---------------- */
+
+#answerWrap {
+  flex: 1 1 56%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.028);
+}
+#answerHead {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px 2px;
+  flex: 0 0 auto;
+}
+.tag {
+  font-size: 9.5px; letter-spacing: .13em; font-weight: 700;
+  color: var(--accent);
+}
+#answerMeta { font-size: 10px; color: var(--dim); margin-left: auto; }
+#copyAnswer {
+  background: transparent; border: 1px solid var(--line); border-radius: 5px;
+  color: var(--dim); font-size: 10px; padding: 1px 6px; cursor: pointer;
+}
+#copyAnswer:hover { color: var(--text); background: rgba(255,255,255,.09); }
+#copyAnswer.done { color: #0b0d12; background: var(--accent); border-color: var(--accent); }
+
+#answer {
+  /* min-height:0 is REQUIRED. A flex item defaults to min-height:auto, which
+     refuses to shrink below its content -- so overflow-y:auto never engages and
+     the text simply grows past the panel with no scrollbar. This is why long
+     answers could not be scrolled. */
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  padding: 2px 12px 10px;
+  /* MUST be no-drag. A drag region swallows every mouse event the window gets,
+     including the wheel -- so making the answer draggable silently disabled
+     scrolling on the one panel that most needs it. Drag the window by its bar,
+     the transcript, the suggestions or the footer instead. */
+  -webkit-app-region: no-drag;
+  font-size: 17px; line-height: 1.5; font-weight: 450;
+  color: #fff; user-select: text; cursor: text;
+}
+
+/* Do NOT set scrollbar-width/scrollbar-color here. Chromium 121+ treats those as
+   the standard scrollbar API, and the moment either is present it IGNORES every
+   ::-webkit-scrollbar rule below -- which is why the answer scrollbar was a
+   near-invisible hairline no matter what width was set for it.
+   The bar is deliberately obvious: it is the signal that there is more to read. */
+#answer::-webkit-scrollbar { width: 12px; }
+#answer::-webkit-scrollbar-track { background: rgba(255,255,255,.06); border-radius: 6px; }
+#answer::-webkit-scrollbar-thumb {
+  background: rgba(255,212,121,.55);            /* the accent gold, hard to miss */
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  min-height: 32px;
+}
+#answer::-webkit-scrollbar-thumb:hover { background: rgba(255,212,121,.85); background-clip: content-box; }
+#answer.empty { color: var(--dim); font-size: 13px; font-style: italic; }
+#answer.thinking::after {
+  content: '▍'; color: var(--accent); animation: blink 1s steps(2) infinite; margin-left: 2px;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ---------------- suggestions ---------------- */
+
+#suggests.loading { opacity: .45; }
+#suggests {
+  flex: 0 0 auto; transition: opacity .2s; padding: 6px 9px; display: flex; flex-wrap: wrap; gap: 5px;
+  border-top: 1px solid var(--line); max-height: 92px; overflow-y: auto;
+}
+.chip {
+  font-size: 11px; padding: 3px 8px; border-radius: 11px;
+  background: rgba(111, 211, 255, 0.11); border: 1px solid rgba(111, 211, 255, 0.25);
+  color: #cfeaff; cursor: pointer; user-select: text;
+}
+.chip:hover { background: rgba(111, 211, 255, 0.2); }
+
+/* ---------------- footer ---------------- */
+
+#foot {
+  flex: 0 0 auto; display: flex; gap: 5px; padding: 7px 8px;
+  border-top: 1px solid var(--line); background: var(--glass-strong);
+}
+#ask {
+  flex: 1; background: rgba(255, 255, 255, 0.06); border: 1px solid var(--line);
+  border-radius: 6px; color: var(--text); font: inherit; font-size: 12px;
+  padding: 5px 8px; outline: none; user-select: text; cursor: text;
+}
+#ask:focus { border-color: rgba(255, 212, 121, 0.5); background: rgba(255,255,255,.09); }
+#ask::placeholder { color: #6b7484; }
+#foot button {
+  background: rgba(255, 255, 255, 0.07); border: 1px solid var(--line);
+  border-radius: 6px; color: var(--dim); font-size: 13px; padding: 4px 9px; cursor: pointer;
+}
+#foot button:hover { color: var(--text); background: rgba(255,255,255,.13); }
+
+/* When the window is small, drop the transcript down and let the answer own
+   the space -- at 380px wide the answer is the only thing worth showing. */
+@media (max-height: 470px) {
+  #feed { flex: 0 0 62px; }
+  #answer { font-size: 15.5px; }
+  #suggests { max-height: 56px; }
+}

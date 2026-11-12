@@ -1,0 +1,50 @@
+name: Tests
+
+# Runs the same setup a new user runs, on a clean macOS and a clean Windows
+# machine, then the offline tests. Nothing here needs a microphone, a sign-in
+# or an API key: anything that would talk to the outside world is replaced by
+# a stand-in (see test/fixtures/).
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Intel macOS: the arm64 pool has repeatedly had no runner to give,
+        # which cancels the job rather than testing anything.
+        os: [macos-15-intel, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Setup, exactly as a user runs it (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: SETUP.bat < NUL
+
+      - name: Setup, exactly as a user runs it (macOS)
+        if: runner.os == 'macOS'
+        run: bash SETUP-MAC.command < /dev/null
+
+      - name: App tests
+        run: npm test
+
+      - name: Audio tests (Windows)
+        if: runner.os == 'Windows'
+        run: .venv\Scripts\python.exe -m unittest discover -s test -p "test_*.py" -v
+
+      - name: Audio tests (macOS)
+        if: runner.os == 'macOS'
+        run: .venv/bin/python3 -m unittest discover -s test -p "test_*.py" -v
+
+      - name: The app finds the Python that setup made
+        run: node -e "const {resolvePython}=require('./src/main/bridge');const p=resolvePython();if(!p||!/\.venv/.test(p.exe)){console.error('found',p);process.exit(1)}console.log('using',p.exe)"
