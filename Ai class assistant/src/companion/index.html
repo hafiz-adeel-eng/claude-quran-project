@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#07090e" />
+<title>Meeting Copilot</title>
+<style>
+  /* Phone-first and deliberately plain: this is read at a glance, mid-sentence,
+     while looking at a camera. Big type, high contrast, no chrome. */
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root{
+    --bg:#07090e; --panel:#0d1017; --line:#1c2230; --text:#f2f5fa; --dim:#8c96a8;
+    --them:#6fd3ff; --me:#b6f09c; --accent:#ffd479; --bad:#ff8a80; --ok:#4ade80;
+  }
+  html,body{ height:100%; }
+  body{
+    background:var(--bg); color:var(--text); overflow:hidden;
+    font:16px/1.5 -apple-system,"Segoe UI",Roboto,system-ui,sans-serif;
+    display:flex; flex-direction:column;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  header{
+    flex:0 0 auto; display:flex; align-items:center; gap:8px;
+    padding:10px 14px; background:var(--panel); border-bottom:1px solid var(--line);
+  }
+  #dot{ width:9px; height:9px; border-radius:50%; background:#6b7280; flex:0 0 auto; }
+  #dot.on{ background:var(--ok); box-shadow:0 0 8px var(--ok); }
+  #state{ font-size:12px; color:var(--dim); }
+  #wake{ margin-left:auto; font-size:11px; color:var(--dim); border:1px solid var(--line);
+         background:transparent; border-radius:6px; padding:4px 8px; }
+  #wake.on{ color:#07090e; background:var(--accent); border-color:var(--accent); }
+
+  #feed{
+    flex:0 0 26%; overflow-y:auto; padding:10px 14px;
+    display:flex; flex-direction:column; justify-content:flex-end; gap:6px;
+    border-bottom:1px solid var(--line);
+  }
+  .line{ font-size:14px; line-height:1.4; }
+  .line .who{ font-size:9.5px; letter-spacing:.1em; margin-right:6px; opacity:.8; }
+  .line.them .who{ color:var(--them); }
+  .line.me .who{ color:var(--me); }
+  .line.me{ color:var(--dim); }
+  .line.live{ opacity:.6; font-style:italic; }
+
+  #answerWrap{ flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }
+  #head{ display:flex; align-items:center; gap:8px; padding:10px 14px 4px; }
+  .tag{ font-size:10px; letter-spacing:.14em; font-weight:700; color:var(--accent); }
+  #meta{ margin-left:auto; font-size:11px; color:var(--dim); }
+  #answer{
+    flex:1; overflow-y:auto; padding:0 14px 14px;
+    font-size:23px; line-height:1.45; font-weight:450; color:#fff;
+  }
+  #answer.empty{ color:var(--dim); font-size:15px; font-style:italic; }
+  #answer.thinking::after{ content:'▍'; color:var(--accent); animation:blink 1s steps(2) infinite; }
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  #chips{ flex:0 0 auto; display:flex; gap:6px; padding:8px 14px 12px;
+          overflow-x:auto; border-top:1px solid var(--line); }
+  #chips:empty{ display:none; }
+  .chip{ flex:0 0 auto; font-size:13px; padding:6px 11px; border-radius:14px;
+         background:rgba(111,211,255,.12); border:1px solid rgba(111,211,255,.28); color:#cfeaff; }
+
+  #banner{ padding:8px 14px; font-size:13px; background:rgba(255,138,128,.15);
+           border-bottom:1px solid rgba(255,138,128,.35); color:#ffd9d5; }
+  .hidden{ display:none !important; }
+  /* Credit line: the last thing on the page, small and faint, so it never
+     competes with the answer being read. Plain text, not a link, so a tap
+     mid-call cannot take the phone off this page. */
+  #credit{ flex:0 0 auto; text-align:center; font-size:10px; color:var(--dim);
+           opacity:.45; padding:6px 12px 8px; }
+</style>
+</head>
+<body>
+  <header>
+    <span id="dot"></span>
+    <span id="state">connecting…</span>
+    <button id="wake" type="button">keep awake</button>
+  </header>
+
+  <div id="banner" class="hidden"></div>
+  <section id="feed"></section>
+
+  <section id="answerWrap">
+    <div id="head"><span class="tag">SAY THIS</span><span id="meta"></span></div>
+    <div id="answer" class="empty">Waiting for them to speak…</div>
+  </section>
+
+  <section id="chips"></section>
+
+  <footer id="credit">Meeting Copilot by Tanzeel &middot; github.com/tanzeeldevAi</footer>
+
+<script>
+(function () {
+  var TOKEN = '__TOKEN__';
+  var $ = function (id) { return document.getElementById(id); };
+  var feed = $('feed'), answer = $('answer'), meta = $('meta'), chips = $('chips');
+  var dot = $('dot'), state = $('state'), banner = $('banner');
+  var live = null, ws = null, retry = 800;
+
+  function setState(t, on) { state.textContent = t; dot.className = on ? 'on' : ''; }
+
+  function addLine(role, text, isLive) {
+    var el = document.createElement('div');
+    el.className = 'line ' + role + (isLive ? ' live' : '');
+    var w = document.createElement('span');
+    w.className = 'who';
+    w.textContent = role === 'them' ? 'THEM' : 'YOU';
+    el.appendChild(w);
+    el.appendChild(document.createTextNode(text));
+    feed.appendChild(el);
+    while (feed.children.length > 40) feed.removeChild(feed.firstChild);
+    feed.scrollTop = feed.scrollHeight;
+    return el;
+  }
+
+  function connect() {
+    var proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    ws = new WebSocket(proto + '://' + location.host + '/?k=' + TOKEN);
+
+    ws.onopen = function () { retry = 800; setState('listening', true); banner.classList.add('hidden'); };
+    ws.onclose = function () {
+      setState('reconnecting…', false);
+      setTimeout(connect, retry);
+      retry = Math.min(retry * 1.6, 6000);
+    };
+    ws.onerror = function () { try { ws.close(); } catch (e) {} };
+
+    ws.onmessage = function (ev) {
+      var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+
+      if (m.t === 'turn') {
+        if (live) { live.remove(); live = null; }
+        addLine(m.role, m.text, false);
+
+      } else if (m.t === 'partial') {
+        if (live) live.remove();
+        live = addLine('them', m.text, true);
+
+      } else if (m.t === 'answer') {
+        if (m.phase === 'start') {
+          answer.textContent = '';
+          answer.className = 'thinking';
+          meta.textContent = 'thinking…';
+        } else if (m.phase === 'delta') {
+          answer.className = 'thinking';
+          answer.textContent = m.full;
+          answer.scrollTop = answer.scrollHeight;
+          meta.textContent = '';
+        } else if (m.phase === 'done') {
+          answer.className = m.skipped ? 'empty' : '';
+          answer.textContent = m.skipped ? 'Nothing to answer there.' : m.text;
+          meta.textContent = m.ms ? (m.ms / 1000).toFixed(1) + 's' : '';
+        }
+
+      } else if (m.t === 'suggest') {
+        chips.innerHTML = '';
+        (m.items || []).forEach(function (q) {
+          var c = document.createElement('div');
+          c.className = 'chip';
+          c.textContent = q;
+          chips.appendChild(c);
+        });
+
+      } else if (m.t === 'state') {
+        setState(m.listening ? 'listening' : 'idle', !!m.listening);
+
+      } else if (m.t === 'error') {
+        banner.textContent = m.message || 'Something went wrong.';
+        banner.classList.remove('hidden');
+      }
+    };
+  }
+
+  // Phones sleep mid-meeting, which is exactly when you need this.
+  var lock = null;
+  $('wake').addEventListener('click', function () {
+    var b = $('wake');
+    if (lock) { lock.release().catch(function(){}); lock = null; b.className = ''; return; }
+    if (!navigator.wakeLock) { b.textContent = 'not supported'; return; }
+    navigator.wakeLock.request('screen').then(function (l) {
+      lock = l; b.className = 'on';
+      l.addEventListener('release', function () { lock = null; b.className = ''; });
+    }).catch(function () { b.textContent = 'blocked'; });
+  });
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && $('wake').className === 'on' && navigator.wakeLock) {
+      navigator.wakeLock.request('screen').then(function (l) { lock = l; }).catch(function(){});
+    }
+  });
+
+  connect();
+})();
+</script>
+</body>
+</html>

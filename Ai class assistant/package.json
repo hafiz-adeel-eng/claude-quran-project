@@ -1,0 +1,37 @@
+{
+  "name": "ai-meeting-assistant-copilot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Open-source AI meeting assistant: an invisible overlay that listens to Zoom, Google Meet or Teams and writes what to say back, on your Claude or ChatGPT subscription.",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "test": "node --test test/app.test.js",
+    "check": "node tools/check-claude.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.13",
+    "docx": "^9.5.1",
+    "koffi": "^3.1.6",
+    "playwright-core": "^1.64.1",
+    "qrcode": "^1.5.4",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "electron": "^34.5.8"
+  },
+  "license": "MIT",
+  "author": "Tanzeel (https://github.com/tanzeeldevAi)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tanzeeldevAi/ai-meeting-assistant-copilot.git"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "allowScripts": {
+    "electron": true,
+    "koffi": true
+  }
+}

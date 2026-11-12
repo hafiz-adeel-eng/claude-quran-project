@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; font-src 'self';" />
+<title>Meeting Copilot</title>
+<link rel="stylesheet" href="overlay.css" />
+</head>
+<body>
+<div id="shell">
+
+  <header id="bar">
+    <span id="dot" class="dot idle" title="status"></span>
+    <span id="status">starting…</span>
+
+    <div id="meters" title="left: them / right: you">
+      <div class="meter"><i id="mThem"></i></div>
+      <div class="meter"><i id="mMe"></i></div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div id="sizes" class="btns">
+      <button data-size="small"  title="Small">S</button>
+      <button data-size="medium" title="Medium">M</button>
+      <button data-size="large"  title="Large">L</button>
+    </div>
+    <input id="opacity" type="range" min="60" max="97" step="1" title="See-through amount" />
+    <button id="through" class="icon" title="Click-through (Ctrl+Shift+X)">⇱</button>
+    <button id="dash"    class="icon" title="Dashboard">▤</button>
+    <button id="hide"    class="icon" title="Hide (Ctrl+Shift+H)">✕</button>
+  </header>
+
+  <div id="banner" class="hidden"></div>
+
+  <section id="feed" aria-label="live transcript"></section>
+
+  <section id="answerWrap">
+    <div id="answerHead">
+      <span class="tag">SAY THIS</span>
+      <span id="answerMeta"></span>
+      <button id="copyAnswer" title="Copy this answer">copy</button>
+    </div>
+    <div id="answer" class="empty">Waiting for the other person to speak…</div>
+  </section>
+
+  <section id="suggests" class="hidden"></section>
+
+  <footer id="foot">
+    <input id="ask" type="text" placeholder="Ask Claude anything (Ctrl+Shift+A)…" autocomplete="off" spellcheck="false" />
+    <button id="askGo" title="Send">↩</button>
+    <button id="again" title="Answer that again">↻</button>
+  </footer>
+
+</div>
+<script src="overlay.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# Your settings, API keys and every meeting transcript. Never commit this.
+data/
+
+# Installed by the setup scripts.
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+
+# Built from audio/mac/syscap.swift by SETUP-MAC.command.
+audio/mac/syscap
+
+# Exports and scratch.
+*.docx
+.work/
+.DS_Store

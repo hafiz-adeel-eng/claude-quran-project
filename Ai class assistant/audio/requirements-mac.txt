@@ -1,0 +1,12 @@
+# Audio + speech sidecar on macOS. SETUP-MAC.command installs this into .venv.
+# System audio comes from audio/mac/syscap (built from syscap.swift), the
+# microphone through sounddevice.
+#
+# faster-whisper is the local speech recogniser. It was missing here, so a new
+# Mac with no cloud speech key had nothing to turn audio into words.
+sounddevice>=0.5.0
+numpy>=1.24
+scipy>=1.10
+faster-whisper>=1.1.0
+websockets>=12.0
+webrtcvad-wheels>=2.0.14
